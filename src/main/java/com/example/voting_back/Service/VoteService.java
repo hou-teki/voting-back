@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.swing.text.html.Option;
 import java.beans.Transient;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 @Service
@@ -34,9 +35,10 @@ public class VoteService {
             throw new IllegalArgumentException("start date is Empty");
         }
 
-        LocalDate start = LocalDate.parse(req.startDate());
-        LocalDate end = LocalDate.parse(req.endDate() == null || req.endDate().isEmpty()
-                ? "9999-12-31" : req.endDate());
+        LocalDate start = LocalDate.parse(req.startDate(), DateTimeFormatter.ISO_DATE_TIME);
+        LocalDate end = req.endDate() == null || req.endDate().isEmpty()
+                ? LocalDate.parse("9999-12-31")
+                : LocalDate.parse(req.endDate(), DateTimeFormatter.ISO_DATE_TIME);
         if (end.isBefore(start)) {
             throw new IllegalArgumentException("end is earlier than start");
         }
