@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: voting-back
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/voting
+    username: voting
+    password: 123456
