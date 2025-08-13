@@ -1,22 +1,24 @@
 package com.example.voting_back.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "options")
+@Table(name = "records")
 @Data
-public class OptionItem {
+public class Record {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String label;
+    @Column(name="user_id")
+    private Long userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vote_id")
     private Vote vote;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "option_id")
+    private OptionItem option;
 }

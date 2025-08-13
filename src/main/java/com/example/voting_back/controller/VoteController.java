@@ -4,10 +4,10 @@ import com.example.voting_back.Service.VoteService;
 import com.example.voting_back.common.ApiResponse;
 import com.example.voting_back.dto.CreateVoteRequest;
 import com.example.voting_back.dto.CreateVoteResponse;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.voting_back.dto.VoteListItemResponse;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/vote")
@@ -24,5 +24,9 @@ public class VoteController {
         return ApiResponse.ok(new CreateVoteResponse(id));
     }
 
+    @GetMapping("/list")
+    public List<VoteListItemResponse> list() {
+        return voteService.listAll();
+    }
 }
 
