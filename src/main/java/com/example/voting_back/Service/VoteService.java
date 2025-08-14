@@ -1,13 +1,15 @@
 package com.example.voting_back.Service;
 
-import com.example.voting_back.dto.CreateVoteRequest;
-import com.example.voting_back.dto.OptionWithCount;
-import com.example.voting_back.dto.VoteListItemResponse;
+import com.example.voting_back.dto.*;
 import com.example.voting_back.entity.OptionItem;
 import com.example.voting_back.entity.Vote;
+import com.example.voting_back.entity.Record;
+import com.example.voting_back.repository.OptionRepository;
 import com.example.voting_back.repository.RecordRepository;
 import com.example.voting_back.repository.VoteRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -18,14 +20,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class VoteService {
 
     private final VoteRepository voteRepository;
+    private final OptionRepository optionRepository;
     private final RecordRepository recordRepository;
-    public VoteService(VoteRepository voteRepository, RecordRepository recordRepository) {
-        this.voteRepository = voteRepository;
-        this.recordRepository = recordRepository;
-    }
 
     @Transactional
     public Long create(CreateVoteRequest req) {
@@ -100,5 +100,52 @@ public class VoteService {
     private OptionWithCount toOptionDto(OptionItem opt, Map<Long, Long> countMap) {
         long count = countMap.getOrDefault(opt.getId(), 0L);
         return new OptionWithCount(opt.getLabel(), count);
+    }
+
+    @Transactional
+    public CastVoteResponse castVote(CastVoteRequest req) {
+        // 1. check
+        Vote vote = voteRepository.findById(req.voteId())
+                .orElseThrow(() -> new IllegalArgumentException("Vote not found: " + req.voteId()));
+
+        LocalDate today = LocalDate.now();
+        if (vote.getStartDate() != null && today.isBefore(vote.getStartDate())) {
+            throw new IllegalArgumentException("Vote not started");
+        }
+        if (vote.getEndDate() != null && today.isAfter(vote.getEndDate())) {
+            throw new IllegalArgumentException("Vote ended");
+        }
+
+        OptionItem option = optionRepository.findById(req.optionId())
+                .orElseThrow(() -> new IllegalArgumentException("Option not found: " + req.optionId()));
+        if (!option.getVote().getId().equals(req.voteId())) {
+            throw new IllegalArgumentException("Option doesn't belong to the vote");
+        }
+
+        if (recordRepository.existsByUserIdAndVoteId(req.userId(), req.voteId())) {
+            throw new IllegalArgumentException("You have already voted");
+        }
+
+        // 2. insert record
+        try {
+            Record record = new Record();
+            record.setUserId(req.userId());
+            record.setVote(vote);
+            record.setOption(option);
+            recordRepository.save(record);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("You have already voted");
+        }
+
+        // 3. return result
+        Map<Long, Long> countMap = recordRepository.countOptionsByVoteId(req.voteId())
+                .stream().collect(Collectors.toMap(RecordRepository.OptionCount::getOptionId, RecordRepository.OptionCount::getCnt));
+
+        long total = countMap.values().stream().mapToLong(Long::longValue).sum();
+
+        List<OptionWithCount> items = optionRepository.findByVoteIdOrderByIdAsc(req.voteId())
+                .stream().map(opt -> toOptionDto(opt, countMap)).toList();
+
+        return new CastVoteResponse(req.voteId(), total, items);
     }
 }

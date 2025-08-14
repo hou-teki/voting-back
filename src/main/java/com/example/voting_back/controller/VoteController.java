@@ -2,21 +2,18 @@ package com.example.voting_back.controller;
 
 import com.example.voting_back.Service.VoteService;
 import com.example.voting_back.common.ApiResponse;
-import com.example.voting_back.dto.CreateVoteRequest;
-import com.example.voting_back.dto.CreateVoteResponse;
-import com.example.voting_back.dto.VoteListItemResponse;
+import com.example.voting_back.dto.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/vote")
+@RequiredArgsConstructor
 public class VoteController {
 
     private final VoteService voteService;
-    public VoteController(VoteService voteService) {
-        this.voteService = voteService;
-    }
 
     @PostMapping("/new")
     public ApiResponse<CreateVoteResponse> createVote(@RequestBody CreateVoteRequest req) {
@@ -25,8 +22,15 @@ public class VoteController {
     }
 
     @GetMapping("/list")
-    public List<VoteListItemResponse> list() {
-        return voteService.listAll();
+    public ApiResponse<List<VoteListItemResponse>> listVote() {
+        List<VoteListItemResponse> list = voteService.listAll();
+        return ApiResponse.ok(list);
+    }
+
+    @PostMapping("/cast")
+    public ApiResponse<CastVoteResponse> castVote(@RequestBody CastVoteRequest req) {
+        CastVoteResponse result = voteService.castVote(req);
+        return ApiResponse.ok(result);
     }
 }
 
