@@ -82,24 +82,29 @@ public class VoteService {
         // 1. Grab all votes with options
         List<Vote> votes = voteRepository.findAll();
 
-        // 2. Grab all optionId with count
-        Map<Long, Long> countMap = recordRepository.countAllOptions()
+        // 2. Grab all optionId / voteId with count
+        Map<Long, Long> countMapByOption = recordRepository.countAllOptions()
                 .stream().collect(Collectors.toMap(RecordRepository.OptionCount::getOptionId, RecordRepository.OptionCount::getCnt));
+
+        Map<Long, Long> countMapByVote = recordRepository.countTotalsByVote()
+                .stream().collect(Collectors.toMap(RecordRepository.VoteCount::getVoteId, RecordRepository.VoteCount::getCnt));
 
         // 3. combine them
         return votes.stream().map(v -> new VoteListItemResponse(
+                v.getId(),
                 v.getTitle(),
                 v.getDescription(),
                 v.getCreatorId(),
                 v.getStartDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getStartDate()) : null,
                 v.getEndDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getEndDate()) : null,
-                v.getOptions().stream().map(opt -> toOptionDto(opt, countMap)).toList()
+                v.getOptions().stream().map(opt -> toOptionDto(opt, countMapByOption)).toList(),
+                countMapByVote.getOrDefault(v.getId(), 0L)
         )).toList();
     }
 
     private OptionWithCount toOptionDto(OptionItem opt, Map<Long, Long> countMap) {
         long count = countMap.getOrDefault(opt.getId(), 0L);
-        return new OptionWithCount(opt.getLabel(), count);
+        return new OptionWithCount(opt.getId(), opt.getLabel(), count);
     }
 
     @Transactional
@@ -134,7 +139,7 @@ public class VoteService {
             record.setOption(option);
             recordRepository.save(record);
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("You have already voted");
+            throw new IllegalArgumentException("Can not insert record");
         }
 
         // 3. return result
