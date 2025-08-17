@@ -12,4 +12,6 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     // left join with options
     @EntityGraph(attributePaths = "options")
     List<Vote> findAll();
+
+    List<Vote> findByCreatorIdOrderByIdDesc(Long creatorId);
 }
