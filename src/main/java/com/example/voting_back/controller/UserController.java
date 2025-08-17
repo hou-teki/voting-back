@@ -2,41 +2,39 @@ package com.example.voting_back.controller;
 
 import com.example.voting_back.Service.UserService;
 import com.example.voting_back.common.ApiResponse;
-import com.example.voting_back.entity.User;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.example.voting_back.dto.LoginRequest;
+import com.example.voting_back.dto.UserDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
-    public record RegisterRequest(String username, String password) {}
-    public record RegisterResponse(Long id, String username) {}
 
     @PostMapping("/register")
-    public ApiResponse<?> register(@RequestBody RegisterRequest req) {
-        if (req == null
-                || req.username() == null || req.username().isBlank()
-                || req.password() == null || req.password().isBlank()
-        ) {
+    public ApiResponse<UserDto> register(@RequestBody LoginRequest req) {
+        if (req == null) {
             return ApiResponse.error(400, "INVALID_INPUT");
         }
 
-        String username = req.username().trim();
-        String password = encoder.encode(req.password());
-
         try {
-            User user = userService.register(username, password);
-            return ApiResponse.ok(new RegisterResponse(user.getId(), user.getUsername()));
+            UserDto dto = userService.register(req.username(), req.password());
+            return ApiResponse.ok(dto);
         } catch (IllegalArgumentException e) {
             return ApiResponse.error(500, "ERROR");
         }
+    }
+
+    @PostMapping("/login")
+    public ApiResponse<UserDto> login(@RequestBody LoginRequest req) {
+        if (req == null) {
+            return ApiResponse.error(400, "INVALID_INPUT");
+        }
+
+        UserDto dto = userService.login(req.username(), req.password());
+        return ApiResponse.ok(dto);
     }
 }
