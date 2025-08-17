@@ -48,10 +48,10 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.google.cloud.sql/mysql-socket-factory-connector-j-8 -->
+		<!-- https://mvnrepository.com/artifact/com.google.cloud.sql/postgres-socket-factory -->
 		<dependency>
 			<groupId>com.google.cloud.sql</groupId>
-			<artifactId>mysql-socket-factory-connector-j-8</artifactId>
+			<artifactId>postgres-socket-factory</artifactId>
 			<version>1.25.0</version>
 		</dependency>
 		<dependency>
