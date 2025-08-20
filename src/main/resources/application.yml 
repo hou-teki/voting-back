@@ -1,3 +1,9 @@
 spring:
   application:
     name: voting-back
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
