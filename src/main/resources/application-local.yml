@@ -1,5 +1,5 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/voting
-    username: voting
-    password: 123456
+    username: ${DB_USER:voting}
+    password: ${DB_PASS:123456}
