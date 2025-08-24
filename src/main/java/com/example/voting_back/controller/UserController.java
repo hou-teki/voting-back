@@ -1,6 +1,6 @@
 package com.example.voting_back.controller;
 
-import com.example.voting_back.Service.UserService;
+import com.example.voting_back.service.UserService;
 import com.example.voting_back.common.ApiResponse;
 import com.example.voting_back.dto.LoginRequest;
 import com.example.voting_back.dto.UserDto;

@@ -1,6 +1,7 @@
-package com.example.voting_back.Service;
+package com.example.voting_back.service;
 
 import com.example.voting_back.dto.*;
+import com.example.voting_back.dto.votelist.VoteListItem;
 import com.example.voting_back.entity.OptionItem;
 import com.example.voting_back.entity.Vote;
 import com.example.voting_back.entity.Record;
@@ -17,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,28 +80,72 @@ public class VoteService {
         return voteRepository.save(vote).getId();
     }
 
-    public List<VoteListItemResponse> listAll() {
-        // 1. Grab all votes with options
+    public List<VoteListItem> listAll(Long userId) {
+        // 1. Load votes with options
         List<Vote> votes = voteRepository.findAll();
 
-        // 2. Grab all optionId / voteId with count
-        Map<Long, Long> countMapByOption = recordRepository.countAllOptions()
-                .stream().collect(Collectors.toMap(RecordRepository.OptionCount::getOptionId, RecordRepository.OptionCount::getCnt));
+        // 2. precompute counts
+        // optionId : count
+        Map<Long, Long> countMapByOption = recordRepository.countGroupByOptionId()
+                .stream().collect(Collectors.toMap(
+                        RecordRepository.OptionCount::getOptionId,
+                        RecordRepository.OptionCount::getCnt
+                ));
 
-        Map<Long, Long> countMapByVote = recordRepository.countTotalsByVote()
-                .stream().collect(Collectors.toMap(RecordRepository.VoteCount::getVoteId, RecordRepository.VoteCount::getCnt));
+        // voteId : count
+        Map<Long, Long> countMapByVote = recordRepository.countGroupByVoteId()
+                .stream().collect(Collectors.toMap(
+                        RecordRepository.VoteCount::getVoteId,
+                        RecordRepository.VoteCount::getCnt
+                ));
 
-        // 3. combine them
-        return votes.stream().map(v -> new VoteListItemResponse(
+        // 3. build DTO
+        List<VoteListItem> res = votes.stream().map(v -> new VoteListItem(
                 v.getId(),
                 v.getTitle(),
                 v.getDescription(),
                 v.getCreatorId(),
                 v.getStartDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getStartDate()) : null,
                 v.getEndDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getEndDate()) : null,
-                v.getOptions().stream().map(opt -> toOptionDto(opt, countMapByOption)).toList(),
-                countMapByVote.getOrDefault(v.getId(), 0L)
+                false,
+                false,
+                v.getOptions().stream()
+                        .map(opt -> new OptionWithCount(opt.getId(), opt.getLabel(), null))
+                        .toList(),
+                null
         )).toList();
+
+        // 3-1. unauthenticated
+        if (userId == null) return res;
+
+        // 3-2. authenticated
+        Set<Long> myParticipatedVotes = recordRepository.findVoteIdByUserId(userId);
+        String today = DateTimeFormatter.ISO_DATE.format(LocalDate.now());
+
+        return res.stream().map(v -> {
+            boolean hasVoted = myParticipatedVotes.contains(v.id());
+
+            boolean started = v.startDate() == null || v.startDate().compareTo(today) <= 0;
+            boolean ended = v.endDate() != null && v.endDate().compareTo(today) < 0;
+
+            boolean canViewResult = ended || hasVoted;
+            boolean canCast = started && !ended && !hasVoted;
+
+            List<OptionWithCount> options = canViewResult
+                    ? v.options().stream()
+                    .map(opt -> new OptionWithCount(opt.id(), opt.label(), countMapByOption.getOrDefault(opt.id(), 0L)))
+                    .toList()
+                    : v.options();
+
+            Long total = canViewResult ? countMapByVote.getOrDefault(v.id(), 0L) : null;
+
+            return new VoteListItem(
+                    v.id(), v.title(), v.description(), v.creatorId(),
+                    v.startDate(), v.endDate(),
+                    canViewResult, canCast,
+                    options, total
+            );
+        }).toList();
     }
 
     private OptionWithCount toOptionDto(OptionItem opt, Map<Long, Long> countMap) {

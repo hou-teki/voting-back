@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Set;
 
 public interface RecordRepository extends JpaRepository<Record, Long> {
 
@@ -24,14 +25,14 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
             from Record r
             group by r.option.id
             """)
-    List<OptionCount> countAllOptions();
+    List<OptionCount> countGroupByOptionId();
 
     @Query("""
             select r.vote.id as voteId, count(r.id) as cnt
             from Record r
             group by r.vote.id
             """)
-    List<VoteCount> countTotalsByVote();
+    List<VoteCount> countGroupByVoteId();
 
     @Query("""
             select r.option.id as optionId, count(r.id) as cnt
@@ -42,4 +43,11 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
     List<OptionCount> countOptionsByVoteId(@Param("voteId") Long voteId);
 
     boolean existsByUserIdAndVoteId(Long userId, Long voteId);
+
+    @Query("""
+            select r.vote.id
+            from Record r
+            where r.userId = :userId
+            """)
+    Set<Long> findVoteIdByUserId(@Param("userId") Long userId);
 }

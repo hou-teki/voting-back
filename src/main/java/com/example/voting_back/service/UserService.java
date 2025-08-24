@@ -1,4 +1,4 @@
-package com.example.voting_back.Service;
+package com.example.voting_back.service;
 
 import com.example.voting_back.dto.UserDto;
 import com.example.voting_back.entity.User;

@@ -1,9 +1,9 @@
 package com.example.voting_back.controller;
 
-import com.example.voting_back.Service.MyVoteService;
+import com.example.voting_back.service.MyVoteService;
 import com.example.voting_back.common.ApiResponse;
 import com.example.voting_back.dto.VoteItemDto;
-import com.example.voting_back.dto.VoteListItemResponse;
+import com.example.voting_back.dto.votelist.VoteListItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,8 +23,8 @@ public class MyVoteController {
     }
 
     @GetMapping("/participated")
-    public ApiResponse<List<VoteListItemResponse>> myParticipated(@RequestParam Long userId) {
-        List<VoteListItemResponse> list = myVoteService.listMyParticipated(userId);
+    public ApiResponse<List<VoteListItem>> myParticipated(@RequestParam Long userId) {
+        List<VoteListItem> list = myVoteService.listMyParticipated(userId);
         return ApiResponse.ok(list);
     }
 }

@@ -1,8 +1,8 @@
-package com.example.voting_back.Service;
+package com.example.voting_back.service;
 
 import com.example.voting_back.dto.OptionWithoutCount;
 import com.example.voting_back.dto.VoteItemDto;
-import com.example.voting_back.dto.VoteListItemResponse;
+import com.example.voting_back.dto.votelist.VoteListItem;
 import com.example.voting_back.entity.Vote;
 import com.example.voting_back.repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +35,8 @@ public class MyVoteService {
         return res;
     }
 
-    public List<VoteListItemResponse> listMyParticipated(Long userId) {
-        List<VoteListItemResponse> list = null;
+    public List<VoteListItem> listMyParticipated(Long userId) {
+        List<VoteListItem> list = null;
         return list;
     }
 }
