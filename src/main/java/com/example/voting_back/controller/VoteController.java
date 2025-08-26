@@ -1,5 +1,6 @@
 package com.example.voting_back.controller;
 
+import com.example.voting_back.dto.votelist.VotePage;
 import com.example.voting_back.service.VoteService;
 import com.example.voting_back.common.ApiResponse;
 import com.example.voting_back.dto.*;
@@ -23,8 +24,12 @@ public class VoteController {
     }
 
     @GetMapping("/list")
-    public ApiResponse<List<VoteListItem>> listVote(@RequestParam(required = false) Long userId) {
-        List<VoteListItem> list = voteService.listAll(userId);
+    public ApiResponse<VotePage<VoteListItem>> listVote(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "2") int size,
+            @RequestParam(required = false) Long userId
+    ) {
+        VotePage<VoteListItem> list = voteService.listAll(page, size, userId);
         return ApiResponse.ok(list);
     }
 

@@ -2,6 +2,7 @@ package com.example.voting_back.service;
 
 import com.example.voting_back.dto.*;
 import com.example.voting_back.dto.votelist.VoteListItem;
+import com.example.voting_back.dto.votelist.VotePage;
 import com.example.voting_back.entity.OptionItem;
 import com.example.voting_back.entity.Vote;
 import com.example.voting_back.entity.Record;
@@ -11,6 +12,10 @@ import com.example.voting_back.repository.VoteRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -80,9 +85,14 @@ public class VoteService {
         return voteRepository.save(vote).getId();
     }
 
-    public List<VoteListItem> listAll(Long userId) {
+    public VotePage<VoteListItem> listAll(int page, int size, Long userId) {
         // 1. Load votes with options
-        List<Vote> votes = voteRepository.findAll();
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        Page<Vote> pageData = voteRepository.findAll(pageable);
+        List<Vote> votes = pageData.getContent();
+        
+        boolean hasNext = pageData.hasNext();
 
         // 2. precompute counts
         // optionId : count
@@ -116,13 +126,13 @@ public class VoteService {
         )).toList();
 
         // 3-1. unauthenticated
-        if (userId == null) return res;
+        if (userId == null) return new VotePage<>(res, page, size, hasNext);
 
         // 3-2. authenticated
         Set<Long> myParticipatedVotes = recordRepository.findVoteIdByUserId(userId);
         String today = DateTimeFormatter.ISO_DATE.format(LocalDate.now());
 
-        return res.stream().map(v -> {
+        List<VoteListItem> updated = res.stream().map(v -> {
             boolean hasVoted = myParticipatedVotes.contains(v.id());
 
             boolean started = v.startDate() == null || v.startDate().compareTo(today) <= 0;
@@ -146,6 +156,8 @@ public class VoteService {
                     options, total
             );
         }).toList();
+        
+        return new VotePage<>(updated, page, size, hasNext);
     }
 
     private OptionWithCount toOptionDto(OptionItem opt, Map<Long, Long> countMap) {
