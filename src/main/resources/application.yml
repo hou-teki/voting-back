@@ -7,3 +7,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+jwt:
+  secret: ${SECRET_KEY}

@@ -1,6 +1,6 @@
 package com.example.voting_back.service;
 
-import com.example.voting_back.dto.UserDto;
+import com.example.voting_back.dto.user.UserDto;
 import com.example.voting_back.entity.User;
 import com.example.voting_back.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

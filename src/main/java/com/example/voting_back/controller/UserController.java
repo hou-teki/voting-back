@@ -1,9 +1,11 @@
 package com.example.voting_back.controller;
 
+import com.example.voting_back.dto.user.LoginResponse;
 import com.example.voting_back.service.UserService;
 import com.example.voting_back.common.ApiResponse;
-import com.example.voting_back.dto.LoginRequest;
-import com.example.voting_back.dto.UserDto;
+import com.example.voting_back.dto.user.LoginRequest;
+import com.example.voting_back.dto.user.UserDto;
+import com.example.voting_back.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,28 +15,35 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
     @PostMapping("/register")
-    public ApiResponse<UserDto> register(@RequestBody LoginRequest req) {
+    public ApiResponse<LoginResponse> register(@RequestBody LoginRequest req) {
         if (req == null) {
             return ApiResponse.error(400, "INVALID_INPUT");
         }
 
         try {
             UserDto dto = userService.register(req.username(), req.password());
-            return ApiResponse.ok(dto);
+
+            String token = jwtUtil.generateToken(dto.id(), dto.username());
+
+            return ApiResponse.ok(new LoginResponse(token, dto));
         } catch (IllegalArgumentException e) {
             return ApiResponse.error(500, "ERROR");
         }
     }
 
     @PostMapping("/login")
-    public ApiResponse<UserDto> login(@RequestBody LoginRequest req) {
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest req) {
         if (req == null) {
             return ApiResponse.error(400, "INVALID_INPUT");
         }
 
         UserDto dto = userService.login(req.username(), req.password());
-        return ApiResponse.ok(dto);
+
+        String token = jwtUtil.generateToken(dto.id(), dto.username());
+
+        return ApiResponse.ok(new LoginResponse(token, dto));
     }
 }
