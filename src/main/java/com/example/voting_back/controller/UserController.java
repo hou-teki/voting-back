@@ -1,49 +1,32 @@
 package com.example.voting_back.controller;
 
-import com.example.voting_back.dto.user.LoginResponse;
-import com.example.voting_back.service.UserService;
+import com.example.voting_back.dto.response.VoteResponse;
+import com.example.voting_back.service.MyVoteService;
 import com.example.voting_back.common.ApiResponse;
-import com.example.voting_back.dto.user.LoginRequest;
-import com.example.voting_back.dto.user.UserDto;
-import com.example.voting_back.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/my")
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
+    private final MyVoteService myVoteService;
 
-    @PostMapping("/register")
-    public ApiResponse<LoginResponse> register(@RequestBody LoginRequest req) {
-        if (req == null) {
-            return ApiResponse.error(400, "INVALID_INPUT");
-        }
-
-        try {
-            UserDto dto = userService.register(req.username(), req.password());
-
-            String token = jwtUtil.generateToken(dto.id(), dto.username());
-
-            return ApiResponse.ok(new LoginResponse(token, dto));
-        } catch (IllegalArgumentException e) {
-            return ApiResponse.error(500, "ERROR");
-        }
+    @GetMapping("/created")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<VoteResponse>> myCreated(@RequestParam Long userId) {
+        List<VoteResponse> list = myVoteService.listMyCreated(userId);
+        return ApiResponse.ok(list);
     }
 
-    @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest req) {
-        if (req == null) {
-            return ApiResponse.error(400, "INVALID_INPUT");
-        }
-
-        UserDto dto = userService.login(req.username(), req.password());
-
-        String token = jwtUtil.generateToken(dto.id(), dto.username());
-
-        return ApiResponse.ok(new LoginResponse(token, dto));
+    @GetMapping("/participated")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<VoteResponse>> myParticipated(@RequestParam Long userId) {
+        List<VoteResponse> list = myVoteService.listMyParticipated(userId);
+        return ApiResponse.ok(list);
     }
 }

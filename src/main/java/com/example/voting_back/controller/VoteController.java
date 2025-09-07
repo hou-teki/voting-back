@@ -1,8 +1,8 @@
 package com.example.voting_back.controller;
 
 import com.example.voting_back.dto.request.VoteRequest;
+import com.example.voting_back.dto.response.LoginResponse;
 import com.example.voting_back.dto.response.VoteResponse;
-import com.example.voting_back.dto.user.UserDto;
 import com.example.voting_back.service.VoteService;
 import com.example.voting_back.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class VoteController {
     @PostMapping("/new")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Long> createVote(
-            @AuthenticationPrincipal UserDto user,
+            @AuthenticationPrincipal LoginResponse.UserDto user,
             @RequestBody VoteRequest req
     ) {
         Long userId = user == null ? null : user.id();
@@ -31,7 +31,7 @@ public class VoteController {
 
     @GetMapping("/list")
     public ApiResponse<Page<VoteResponse>> listVote(
-            @AuthenticationPrincipal UserDto user,
+            @AuthenticationPrincipal LoginResponse.UserDto user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "2") int size
     ) {
@@ -43,7 +43,7 @@ public class VoteController {
     @PostMapping("/cast")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<VoteResponse> castVote(
-            @AuthenticationPrincipal UserDto user,
+            @AuthenticationPrincipal LoginResponse.UserDto user,
             @PathVariable Long voteId,
             @PathVariable Long optionId
     ) {

@@ -17,7 +17,7 @@ public record VoteResponse(
 ) {
 
     public record VoteOptionResponse(
-            long id,
+            Long id,
             String label,
             Long count
     ) {
