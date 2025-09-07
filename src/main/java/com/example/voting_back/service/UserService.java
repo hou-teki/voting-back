@@ -1,49 +1,43 @@
 package com.example.voting_back.service;
 
-import com.example.voting_back.dto.response.LoginResponse;
-import com.example.voting_back.entity.User;
-import com.example.voting_back.repository.UserRepository;
+import com.example.voting_back.dto.response.VoteResponse;
+import com.example.voting_back.entity.Vote;
+import com.example.voting_back.repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository repo;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final VoteRepository voteRepository;
 
-    public LoginResponse.UserDto register(String username, String password) {
-        // 1. check
-        if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            throw new RuntimeException("INVALID_INPUT");
-        }
+    public List<VoteResponse> listMyCreated(Long userId) {
+        // 1. Get votes created by userId
+        List<Vote> votes = voteRepository.findByCreatorIdOrderByIdDesc(userId);
 
-        // 2. encode password
-        String trimUsername = username.trim();
-        String encodedPassword = encoder.encode(password);
+        // 2. form to VoteList dto
+        List<VoteResponse> res = votes.stream().map(v -> new VoteResponse(
+                v.getId(),
+                v.getTitle(),
+                v.getDescription(),
+                v.getCreatorId(),
+                v.getStartDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getStartDate()) : null,
+                v.getEndDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getEndDate()) : null,
+                v.getOptions().stream().map(opt -> new VoteResponse.VoteOptionResponse(opt.getId(), opt.getLabel(), null)).toList(),
+                null,
+                null,
+                null
+        )).toList();
 
-        // 3. insert user
-        if (repo.existsByUsername(trimUsername)) {
-            throw new IllegalArgumentException("USERNAME_TAKEN");
-        }
-        User user = User.builder()
-                .username(trimUsername)
-                .password(encodedPassword)
-                .build();
-        User registeredUser = repo.save(user);
-
-        return new LoginResponse.UserDto(registeredUser.getId(), registeredUser.getUsername());
+        return res;
     }
 
-    public LoginResponse.UserDto login(String username, String password) {
-        User user = repo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
-
-        boolean matches = encoder.matches(password, user.getPassword());
-        if (!matches) {
-            throw new RuntimeException("Invalid credentials");
-        }
-        return new LoginResponse.UserDto(user.getId(), user.getUsername());
+    public List<VoteResponse> listMyParticipated(Long userId) {
+        List<VoteResponse> list = null;
+        return list;
     }
 }

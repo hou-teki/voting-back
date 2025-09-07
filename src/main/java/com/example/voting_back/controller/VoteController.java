@@ -26,7 +26,7 @@ public class VoteController {
     ) {
         Long userId = user == null ? null : user.id();
         Long id = voteService.create(req, userId);
-        return ApiResponse.ok(id);
+        return ApiResponse.success(id);
     }
 
     @GetMapping("/list")
@@ -37,7 +37,7 @@ public class VoteController {
     ) {
         Long userId = user == null ? null : user.id();
         Page<VoteResponse> list = voteService.listAll(page, size, userId);
-        return ApiResponse.ok(list);
+        return ApiResponse.success(list);
     }
 
     @PostMapping("/cast")
@@ -49,7 +49,7 @@ public class VoteController {
     ) {
         Long userId = user == null ? null : user.id();
         VoteResponse result = voteService.castVote(userId, voteId, optionId);
-        return ApiResponse.ok(result);
+        return ApiResponse.success(result);
     }
 }
 
