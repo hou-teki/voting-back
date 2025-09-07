@@ -15,22 +15,13 @@ public class AuthService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public LoginResponse.UserDto register(String username, String password) {
-        // 1. check
-        if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            throw new RuntimeException("INVALID_INPUT");
+        if (repo.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username taken");
         }
 
-        // 2. encode password
-        String trimUsername = username.trim();
-        String encodedPassword = encoder.encode(password);
-
-        // 3. insert user
-        if (repo.existsByUsername(trimUsername)) {
-            throw new IllegalArgumentException("USERNAME_TAKEN");
-        }
         User user = User.builder()
-                .username(trimUsername)
-                .password(encodedPassword)
+                .username(username)
+                .password(encoder.encode(password))
                 .build();
         User registeredUser = repo.save(user);
 
@@ -38,12 +29,13 @@ public class AuthService {
     }
 
     public LoginResponse.UserDto login(String username, String password) {
-        User user = repo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = repo.findByUsername(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         boolean matches = encoder.matches(password, user.getPassword());
         if (!matches) {
-            throw new RuntimeException("Invalid credentials");
+            throw new IllegalArgumentException("Invalid credentials");
         }
+
         return new LoginResponse.UserDto(user.getId(), user.getUsername());
     }
 }
