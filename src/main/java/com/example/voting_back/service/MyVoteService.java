@@ -1,8 +1,6 @@
 package com.example.voting_back.service;
 
-import com.example.voting_back.dto.OptionWithoutCount;
-import com.example.voting_back.dto.VoteItemDto;
-import com.example.voting_back.dto.votelist.VoteListItem;
+import com.example.voting_back.dto.response.VoteResponse;
 import com.example.voting_back.entity.Vote;
 import com.example.voting_back.repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,26 +15,29 @@ public class MyVoteService {
 
     private final VoteRepository voteRepository;
 
-    public List<VoteItemDto> listMyCreated(Long userId) {
+    public List<VoteResponse> listMyCreated(Long userId) {
         // 1. Get votes created by userId
         List<Vote> votes = voteRepository.findByCreatorIdOrderByIdDesc(userId);
 
         // 2. form to VoteList dto
-        List<VoteItemDto> res = votes.stream().map(v -> new VoteItemDto(
+        List<VoteResponse> res = votes.stream().map(v -> new VoteResponse(
                 v.getId(),
                 v.getTitle(),
                 v.getDescription(),
                 v.getCreatorId(),
                 v.getStartDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getStartDate()) : null,
                 v.getEndDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getEndDate()) : null,
-                v.getOptions().stream().map(opt -> new OptionWithoutCount(opt.getId(), opt.getLabel())).toList()
+                v.getOptions().stream().map(opt -> new VoteResponse.VoteOptionResponse(opt.getId(), opt.getLabel(), null)).toList(),
+                null,
+                null,
+                null
         )).toList();
 
         return res;
     }
 
-    public List<VoteListItem> listMyParticipated(Long userId) {
-        List<VoteListItem> list = null;
+    public List<VoteResponse> listMyParticipated(Long userId) {
+        List<VoteResponse> list = null;
         return list;
     }
 }

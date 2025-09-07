@@ -1,8 +1,7 @@
 package com.example.voting_back.service;
 
-import com.example.voting_back.dto.*;
-import com.example.voting_back.dto.votelist.VoteListItem;
-import com.example.voting_back.dto.votelist.VotePage;
+import com.example.voting_back.dto.request.VoteRequest;
+import com.example.voting_back.dto.response.VoteResponse;
 import com.example.voting_back.entity.OptionItem;
 import com.example.voting_back.entity.Vote;
 import com.example.voting_back.entity.Record;
@@ -35,13 +34,13 @@ public class VoteService {
     private final RecordRepository recordRepository;
 
     @Transactional
-    public Long create(CreateVoteRequest req) {
+    public Long create(VoteRequest req, Long creatorId) {
         // 1. single-check
         if (req == null) throw new IllegalArgumentException("req is Empty");
         if (req.title() == null || req.title().trim().isEmpty()) {
             throw new IllegalArgumentException("title is Empty");
         }
-        if (req.creatorId() == null) {
+        if (creatorId == null) {
             throw new IllegalArgumentException("creator is Empty");
         }
         if (req.startDate() == null || req.startDate().isEmpty()) {
@@ -58,7 +57,7 @@ public class VoteService {
         }
 
         boolean hasAtLeast2 = req.options() != null && req.options().stream()
-                .filter(o -> o != null && o.label() != null && !o.label().trim().isEmpty())
+                .filter(label -> label != null && !label.trim().isEmpty())
                 .limit(2).count() == 2;
         if (!hasAtLeast2) {
             throw new IllegalArgumentException("should have at least 2 options");
@@ -68,16 +67,16 @@ public class VoteService {
         Vote vote = Vote.builder()
                 .title(req.title().trim())
                 .description(req.description())
-                .creatorId(req.creatorId())
+                .creatorId(creatorId)
                 .startDate(start)
                 .endDate(end)
                 .options(new ArrayList<>())
                 .build();
 
-        req.options().forEach(o -> {
-            if (o != null && o.label() != null && !o.label().trim().isEmpty()) {
+        req.options().forEach(label -> {
+            if (label != null && !label.trim().isEmpty()) {
                 OptionItem optionItem = new OptionItem();
-                optionItem.setLabel(o.label().trim());
+                optionItem.setLabel(label.trim());
                 vote.addOption(optionItem);
             }
         });
@@ -85,14 +84,10 @@ public class VoteService {
         return voteRepository.save(vote).getId();
     }
 
-    public VotePage<VoteListItem> listAll(int page, int size, Long userId) {
+    public Page<VoteResponse> listAll(int page, int size, Long userId) {
         // 1. Load votes with options
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-
         Page<Vote> pageData = voteRepository.findAll(pageable);
-        List<Vote> votes = pageData.getContent();
-        
-        boolean hasNext = pageData.hasNext();
 
         // 2. precompute counts
         // optionId : count
@@ -110,29 +105,29 @@ public class VoteService {
                 ));
 
         // 3. build DTO
-        List<VoteListItem> res = votes.stream().map(v -> new VoteListItem(
+        Page<VoteResponse> res = pageData.map(v -> new VoteResponse(
                 v.getId(),
                 v.getTitle(),
                 v.getDescription(),
                 v.getCreatorId(),
                 v.getStartDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getStartDate()) : null,
                 v.getEndDate() != null ? DateTimeFormatter.ISO_DATE.format(v.getEndDate()) : null,
-                false,
-                false,
                 v.getOptions().stream()
-                        .map(opt -> new OptionWithCount(opt.getId(), opt.getLabel(), null))
+                        .map(opt -> new VoteResponse.VoteOptionResponse(opt.getId(), opt.getLabel(), null))
                         .toList(),
-                null
-        )).toList();
+                null,
+                false,
+                false
+        ));
 
         // 3-1. unauthenticated
-        if (userId == null) return new VotePage<>(res, page, size, hasNext);
+        if (userId == null) return res;
 
         // 3-2. authenticated
         Set<Long> myParticipatedVotes = recordRepository.findVoteIdByUserId(userId);
         String today = DateTimeFormatter.ISO_DATE.format(LocalDate.now());
 
-        List<VoteListItem> updated = res.stream().map(v -> {
+        Page<VoteResponse> updated = res.map(v -> {
             boolean hasVoted = myParticipatedVotes.contains(v.id());
 
             boolean started = v.startDate() == null || v.startDate().compareTo(today) <= 0;
@@ -141,35 +136,38 @@ public class VoteService {
             boolean canViewResult = ended || hasVoted;
             boolean canCast = started && !ended && !hasVoted;
 
-            List<OptionWithCount> options = canViewResult
+            List<VoteResponse.VoteOptionResponse> options = canViewResult
                     ? v.options().stream()
-                    .map(opt -> new OptionWithCount(opt.id(), opt.label(), countMapByOption.getOrDefault(opt.id(), 0L)))
-                    .toList()
+                    .map(opt -> new VoteResponse.VoteOptionResponse(
+                            opt.id(),
+                            opt.label(),
+                            countMapByOption.getOrDefault(opt.id(), 0L)
+                    )).toList()
                     : v.options();
 
             Long total = canViewResult ? countMapByVote.getOrDefault(v.id(), 0L) : null;
 
-            return new VoteListItem(
+            return new VoteResponse(
                     v.id(), v.title(), v.description(), v.creatorId(),
                     v.startDate(), v.endDate(),
-                    canViewResult, canCast,
-                    options, total
+                    options, total,
+                    canViewResult, canCast
             );
-        }).toList();
+        });
         
-        return new VotePage<>(updated, page, size, hasNext);
+        return updated;
     }
 
-    private OptionWithCount toOptionDto(OptionItem opt, Map<Long, Long> countMap) {
+    private VoteResponse.VoteOptionResponse toOptionDto(OptionItem opt, Map<Long, Long> countMap) {
         long count = countMap.getOrDefault(opt.getId(), 0L);
-        return new OptionWithCount(opt.getId(), opt.getLabel(), count);
+        return new VoteResponse.VoteOptionResponse(opt.getId(), opt.getLabel(), count);
     }
 
     @Transactional
-    public CastVoteResponse castVote(CastVoteRequest req) {
+    public VoteResponse castVote(Long userId, Long voteId, Long optionId) {
         // 1. check
-        Vote vote = voteRepository.findById(req.voteId())
-                .orElseThrow(() -> new IllegalArgumentException("Vote not found: " + req.voteId()));
+        Vote vote = voteRepository.findById(voteId)
+                .orElseThrow(() -> new IllegalArgumentException("Vote not found: " + voteId));
 
         LocalDate today = LocalDate.now();
         if (vote.getStartDate() != null && today.isBefore(vote.getStartDate())) {
@@ -179,20 +177,20 @@ public class VoteService {
             throw new IllegalArgumentException("Vote ended");
         }
 
-        OptionItem option = optionRepository.findById(req.optionId())
-                .orElseThrow(() -> new IllegalArgumentException("Option not found: " + req.optionId()));
-        if (!option.getVote().getId().equals(req.voteId())) {
+        OptionItem option = optionRepository.findById(optionId)
+                .orElseThrow(() -> new IllegalArgumentException("Option not found: " + optionId));
+        if (!option.getVote().getId().equals(voteId)) {
             throw new IllegalArgumentException("Option doesn't belong to the vote");
         }
 
-        if (recordRepository.existsByUserIdAndVoteId(req.userId(), req.voteId())) {
+        if (recordRepository.existsByUserIdAndVoteId(userId, voteId)) {
             throw new IllegalArgumentException("You have already voted");
         }
 
         // 2. insert record
         try {
             Record record = new Record();
-            record.setUserId(req.userId());
+            record.setUserId(userId);
             record.setVote(vote);
             record.setOption(option);
             recordRepository.save(record);
@@ -201,14 +199,25 @@ public class VoteService {
         }
 
         // 3. return result
-        Map<Long, Long> countMap = recordRepository.countOptionsByVoteId(req.voteId())
+        Map<Long, Long> countMap = recordRepository.countOptionsByVoteId(voteId)
                 .stream().collect(Collectors.toMap(RecordRepository.OptionCount::getOptionId, RecordRepository.OptionCount::getCnt));
 
         long total = countMap.values().stream().mapToLong(Long::longValue).sum();
 
-        List<OptionWithCount> items = optionRepository.findByVoteIdOrderByIdAsc(req.voteId())
+        List<VoteResponse.VoteOptionResponse> items = optionRepository.findByVoteIdOrderByIdAsc(voteId)
                 .stream().map(opt -> toOptionDto(opt, countMap)).toList();
 
-        return new CastVoteResponse(req.voteId(), total, items);
+        return new VoteResponse(
+                voteId,
+                null,
+                null,
+                userId,
+                null,
+                null,
+                items,
+                total,
+                true,
+                false
+        );
     }
 }
