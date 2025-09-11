@@ -5,9 +5,9 @@ import com.example.voting_back.dto.response.LoginResponse;
 import com.example.voting_back.dto.response.VoteResponse;
 import com.example.voting_back.service.VoteService;
 import com.example.voting_back.common.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,13 +19,11 @@ public class VoteController {
     private final VoteService voteService;
 
     @PostMapping("/new")
-    @PreAuthorize("isAuthenticated()")
     public ApiResponse<Long> createVote(
             @AuthenticationPrincipal LoginResponse.UserDto user,
-            @RequestBody VoteRequest req
+            @Valid @RequestBody VoteRequest req
     ) {
-        Long userId = user == null ? null : user.id();
-        Long id = voteService.create(req, userId);
+        Long id = voteService.create(req, user.id());
         return ApiResponse.success(id);
     }
 
@@ -41,15 +39,12 @@ public class VoteController {
     }
 
     @PostMapping("/cast")
-    @PreAuthorize("isAuthenticated()")
     public ApiResponse<VoteResponse> castVote(
             @AuthenticationPrincipal LoginResponse.UserDto user,
             @PathVariable Long voteId,
             @PathVariable Long optionId
     ) {
-        Long userId = user == null ? null : user.id();
-        VoteResponse result = voteService.castVote(userId, voteId, optionId);
+        VoteResponse result = voteService.castVote(user.id(), voteId, optionId);
         return ApiResponse.success(result);
     }
 }
-

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,35 +36,24 @@ public class VoteService {
 
     @Transactional
     public Long create(VoteRequest req, Long creatorId) {
-        // 1. single-check
-        if (req == null) throw new IllegalArgumentException("req is Empty");
-        if (req.title() == null || req.title().trim().isEmpty()) {
-            throw new IllegalArgumentException("title is Empty");
-        }
-        if (creatorId == null) {
-            throw new IllegalArgumentException("creator is Empty");
-        }
-        if (req.startDate() == null || req.startDate().isEmpty()) {
-            throw new IllegalArgumentException("start date is Empty");
-        }
 
-        // 2. cross-check
-        LocalDate start = LocalDate.parse(req.startDate(), DateTimeFormatter.ISO_DATE_TIME);
+        // 1. cross-check
+        LocalDate start = toLocalDate(req.startDate());
         LocalDate end = req.endDate() == null || req.endDate().isEmpty()
                 ? LocalDate.parse("9999-12-31")
-                : LocalDate.parse(req.endDate(), DateTimeFormatter.ISO_DATE_TIME);
+                : toLocalDate(req.endDate());
         if (end.isBefore(start)) {
-            throw new IllegalArgumentException("end is earlier than start");
+            throw new IllegalArgumentException("End is earlier than start");
         }
 
         boolean hasAtLeast2 = req.options() != null && req.options().stream()
                 .filter(label -> label != null && !label.trim().isEmpty())
                 .limit(2).count() == 2;
         if (!hasAtLeast2) {
-            throw new IllegalArgumentException("should have at least 2 options");
+            throw new IllegalArgumentException("Should have at least 2 options");
         }
 
-        // 3. build entity
+        // 2. build entity
         Vote vote = Vote.builder()
                 .title(req.title().trim())
                 .description(req.description())
@@ -219,5 +209,13 @@ public class VoteService {
                 true,
                 false
         );
+    }
+
+    public LocalDate toLocalDate(String dateStr) {
+        try {
+            return LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date: " + dateStr);
+        }
     }
 }

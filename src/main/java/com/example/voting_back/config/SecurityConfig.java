@@ -24,7 +24,12 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(reg -> reg.anyRequest().permitAll());
+                .authorizeHttpRequests(reg ->
+                        reg.requestMatchers("/api/auth/**").permitAll()
+                                .requestMatchers("/api/vote/list").permitAll()
+                                .requestMatchers("/api/hello").permitAll()
+                                .anyRequest().authenticated()
+                );
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
