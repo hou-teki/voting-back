@@ -38,7 +38,7 @@ public class VoteController {
         return ApiResponse.success(list);
     }
 
-    @PostMapping("/cast")
+    @PostMapping("/cast/{voteId}/{optionId}")
     public ApiResponse<VoteResponse> castVote(
             @AuthenticationPrincipal LoginResponse.UserDto user,
             @PathVariable Long voteId,

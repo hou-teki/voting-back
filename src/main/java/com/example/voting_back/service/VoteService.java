@@ -20,10 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,16 +76,22 @@ public class VoteService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         Page<Vote> pageData = voteRepository.findAll(pageable);
 
+        List<Long> voteIds = pageData.getContent().stream().map(Vote::getId).toList();
+
         // 2. precompute counts
         // optionId : count
-        Map<Long, Long> countMapByOption = recordRepository.countGroupByOptionId()
+        Map<Long, Long> countMapByOption = voteIds.isEmpty()
+                ? Collections.emptyMap()
+                : recordRepository.countGroupByOptionId(voteIds)
                 .stream().collect(Collectors.toMap(
                         RecordRepository.OptionCount::getOptionId,
                         RecordRepository.OptionCount::getCnt
                 ));
 
         // voteId : count
-        Map<Long, Long> countMapByVote = recordRepository.countGroupByVoteId()
+        Map<Long, Long> countMapByVote = voteIds.isEmpty()
+                ? Collections.emptyMap()
+                : recordRepository.countGroupByVoteId(voteIds)
                 .stream().collect(Collectors.toMap(
                         RecordRepository.VoteCount::getVoteId,
                         RecordRepository.VoteCount::getCnt
@@ -117,7 +120,7 @@ public class VoteService {
         Set<Long> myParticipatedVotes = recordRepository.findVoteIdByUserId(userId);
         String today = DateTimeFormatter.ISO_DATE.format(LocalDate.now());
 
-        Page<VoteResponse> updated = res.map(v -> {
+        return res.map(v -> {
             boolean hasVoted = myParticipatedVotes.contains(v.id());
 
             boolean started = v.startDate() == null || v.startDate().compareTo(today) <= 0;
@@ -144,13 +147,6 @@ public class VoteService {
                     canViewResult, canCast
             );
         });
-        
-        return updated;
-    }
-
-    private VoteResponse.VoteOptionResponse toOptionDto(OptionItem opt, Map<Long, Long> countMap) {
-        long count = countMap.getOrDefault(opt.getId(), 0L);
-        return new VoteResponse.VoteOptionResponse(opt.getId(), opt.getLabel(), count);
     }
 
     @Transactional
@@ -189,13 +185,20 @@ public class VoteService {
         }
 
         // 3. return result
-        Map<Long, Long> countMap = recordRepository.countOptionsByVoteId(voteId)
-                .stream().collect(Collectors.toMap(RecordRepository.OptionCount::getOptionId, RecordRepository.OptionCount::getCnt));
+        Map<Long, Long> countMapByOption = recordRepository.countGroupByOptionId(List.of(voteId))
+                .stream().collect(Collectors.toMap(
+                        RecordRepository.OptionCount::getOptionId,
+                        RecordRepository.OptionCount::getCnt
+                ));
 
-        long total = countMap.values().stream().mapToLong(Long::longValue).sum();
+        long total = countMapByOption.values().stream().mapToLong(Long::longValue).sum();
 
         List<VoteResponse.VoteOptionResponse> items = optionRepository.findByVoteIdOrderByIdAsc(voteId)
-                .stream().map(opt -> toOptionDto(opt, countMap)).toList();
+                .stream().map(opt -> new VoteResponse.VoteOptionResponse(
+                        opt.getId(),
+                        opt.getLabel(),
+                        countMapByOption.getOrDefault(opt.getId(), 0L)
+                        )).toList();
 
         return new VoteResponse(
                 voteId,

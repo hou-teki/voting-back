@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -12,37 +13,29 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
 
     interface OptionCount {
         Long getOptionId();
-        long getCnt();
+        Long getCnt();
     }
 
     interface VoteCount {
         Long getVoteId();
-        long getCnt();
+        Long getCnt();
     }
 
     @Query("""
-            select r.option.id as optionId, count(r.id) as cnt
+            select r.option.id as optionId, count(r) as cnt
             from Record r
+            where r.vote.id in :voteIds
             group by r.option.id
             """)
-    List<OptionCount> countGroupByOptionId();
+    List<OptionCount> countGroupByOptionId(@Param("voteIds")Collection<Long> voteIds);
 
     @Query("""
-            select r.vote.id as voteId, count(r.id) as cnt
+            select r.vote.id as voteId, count(r) as cnt
             from Record r
+            where r.vote.id in :voteIds
             group by r.vote.id
             """)
-    List<VoteCount> countGroupByVoteId();
-
-    @Query("""
-            select r.option.id as optionId, count(r.id) as cnt
-            from Record r
-            where r.vote.id = :voteId
-            group by r.option.id
-            """)
-    List<OptionCount> countOptionsByVoteId(@Param("voteId") Long voteId);
-
-    boolean existsByUserIdAndVoteId(Long userId, Long voteId);
+    List<VoteCount> countGroupByVoteId(@Param("voteIds")Collection<Long> voteIds);
 
     @Query("""
             select r.vote.id
@@ -50,4 +43,7 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
             where r.userId = :userId
             """)
     Set<Long> findVoteIdByUserId(@Param("userId") Long userId);
+
+    boolean existsByUserIdAndVoteId(Long userId, Long voteId);
+
 }
