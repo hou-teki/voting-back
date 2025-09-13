@@ -35,7 +35,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String username = jwtUtil.getUsername(token);
 
                 var authentication = new UsernamePasswordAuthenticationToken(
-                        new LoginResponse.UserDto(userId, username),
+                        new LoginResponse.UserDto(userId, username, null, null, null),
                         null,
                         Collections.emptyList()
                 );

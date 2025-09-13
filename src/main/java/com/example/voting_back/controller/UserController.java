@@ -1,9 +1,11 @@
 package com.example.voting_back.controller;
 
+import com.example.voting_back.dto.request.LoginRequest;
 import com.example.voting_back.dto.response.LoginResponse;
 import com.example.voting_back.dto.response.VoteResponse;
 import com.example.voting_back.service.UserService;
 import com.example.voting_back.common.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,15 +21,18 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    public ApiResponse<?> getProfile(@AuthenticationPrincipal LoginResponse.UserDto user) {
-        return null;
+    public ApiResponse<LoginResponse.UserDto> getProfile(
+            @AuthenticationPrincipal LoginResponse.UserDto user) {
+        LoginResponse.UserDto dto = userService.getProfile(user.id());
+        return ApiResponse.success(dto);
     }
 
-    @PutMapping("/me")
-    public ApiResponse<?> updateProfile(
+    @PostMapping("/me")
+    public ApiResponse<LoginResponse.UserDto> updateProfile(
             @AuthenticationPrincipal LoginResponse.UserDto user,
-            @RequestBody Map<String, String> updates) {
-        return null;
+            @Valid @RequestBody LoginRequest.UserProfileRequest updates) {
+        LoginResponse.UserDto dto = userService.updateProfile(user.id(), updates);
+        return ApiResponse.success(dto);
     }
 
     @GetMapping("/created")

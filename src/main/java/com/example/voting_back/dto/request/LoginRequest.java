@@ -1,5 +1,7 @@
 package com.example.voting_back.dto.request;
 
+import com.example.voting_back.entity.enums.AgeRange;
+import com.example.voting_back.entity.enums.Gender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -13,4 +15,12 @@ public record LoginRequest(
         @Size(min = 4, max = 20, message = "Password length must be between {min} and {max}")
         String password
 ) {
+    public record UserProfileRequest(
+            AgeRange ageRange,
+
+            Gender gender,
+
+            @Size(max = 100, message = "Department must not exceed 100 characters")
+            String department
+    ) {}
 }

@@ -214,7 +214,7 @@ public class VoteService {
         );
     }
 
-    public LocalDate toLocalDate(String dateStr) {
+    private LocalDate toLocalDate(String dateStr) {
         try {
             return LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE_TIME);
         } catch (DateTimeParseException e) {
