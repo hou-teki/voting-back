@@ -9,8 +9,8 @@ public record VoteResponse(
         Long creatorId,
         String startDate,
         String endDate,
-        List<VoteOptionResponse> options,
 
+        List<VoteOptionResponse> options,
         Long totalVotes,
         Boolean canViewResult,
         Boolean canCast

@@ -46,4 +46,11 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
 
     boolean existsByUserIdAndVoteId(Long userId, Long voteId);
 
+    @Query("""
+            select r.vote.id, r.option.label
+            from Record r
+            where r.userId = :userId and r.vote.id in :voteIds
+            """)
+    List<Object[]> findMyPickedLabel(@Param("userId") Long userId,
+                                     @Param("voteIds") Collection<Long> voteIds);
 }

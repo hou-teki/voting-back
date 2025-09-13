@@ -5,11 +5,10 @@ import com.example.voting_back.dto.response.VoteResponse;
 import com.example.voting_back.service.UserService;
 import com.example.voting_back.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,27 +20,32 @@ public class UserController {
 
     @GetMapping("/me")
     public ApiResponse<?> getProfile(@AuthenticationPrincipal LoginResponse.UserDto user) {
-        List<VoteResponse> list = userService.listMyCreated(user.id());
-        return ApiResponse.success(list);
+        return null;
     }
 
     @PutMapping("/me")
     public ApiResponse<?> updateProfile(
             @AuthenticationPrincipal LoginResponse.UserDto user,
             @RequestBody Map<String, String> updates) {
-        List<VoteResponse> list = userService.listMyCreated(user.id());
-        return ApiResponse.success(list);
+        return null;
     }
 
     @GetMapping("/created")
-    public ApiResponse<List<VoteResponse>> myCreated(@AuthenticationPrincipal LoginResponse.UserDto user) {
-        List<VoteResponse> list = userService.listMyCreated(user.id());
+    public ApiResponse<Page<VoteResponse>> myCreated(
+            @AuthenticationPrincipal LoginResponse.UserDto user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "2") int size) {
+        Page<VoteResponse> list = userService.listMyCreated(page, size, user.id());
         return ApiResponse.success(list);
     }
 
     @GetMapping("/participated")
-    public ApiResponse<List<VoteResponse>> myParticipated(@AuthenticationPrincipal LoginResponse.UserDto user) {
-        List<VoteResponse> list = userService.listMyParticipated(user.id());
+    public ApiResponse<Page<VoteResponse>> myParticipated(
+            @AuthenticationPrincipal LoginResponse.UserDto user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "2") int size
+    ) {
+        Page<VoteResponse> list = userService.listMyParticipated(page, size, user.id());
         return ApiResponse.success(list);
     }
 }
