@@ -3,3 +3,13 @@ spring:
     url: jdbc:postgresql://localhost:5432/voting
     username: ${DB_USER:voting}
     password: ${DB_PASS:123456}
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.http.converter.json: DEBUG
+    com.fasterxml.jackson.databind: WARN
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
