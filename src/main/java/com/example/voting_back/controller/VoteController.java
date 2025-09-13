@@ -1,7 +1,7 @@
 package com.example.voting_back.controller;
 
 import com.example.voting_back.dto.request.VoteRequest;
-import com.example.voting_back.dto.response.LoginResponse;
+import com.example.voting_back.dto.response.UserResponse;
 import com.example.voting_back.dto.response.VoteResponse;
 import com.example.voting_back.service.VoteService;
 import com.example.voting_back.common.ApiResponse;
@@ -20,7 +20,7 @@ public class VoteController {
 
     @PostMapping("/new")
     public ApiResponse<Long> createVote(
-            @AuthenticationPrincipal LoginResponse.UserDto user,
+            @AuthenticationPrincipal UserResponse.UserProfileDto user,
             @Valid @RequestBody VoteRequest req
     ) {
         Long id = voteService.create(req, user.id());
@@ -29,7 +29,7 @@ public class VoteController {
 
     @GetMapping("/list")
     public ApiResponse<Page<VoteResponse>> listVote(
-            @AuthenticationPrincipal LoginResponse.UserDto user,
+            @AuthenticationPrincipal UserResponse.UserProfileDto user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "2") int size
     ) {
@@ -40,7 +40,7 @@ public class VoteController {
 
     @PostMapping("/cast/{voteId}/{optionId}")
     public ApiResponse<VoteResponse> castVote(
-            @AuthenticationPrincipal LoginResponse.UserDto user,
+            @AuthenticationPrincipal UserResponse.UserProfileDto user,
             @PathVariable Long voteId,
             @PathVariable Long optionId
     ) {

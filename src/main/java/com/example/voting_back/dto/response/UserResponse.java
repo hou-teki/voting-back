@@ -3,11 +3,11 @@ package com.example.voting_back.dto.response;
 import com.example.voting_back.entity.enums.AgeRange;
 import com.example.voting_back.entity.enums.Gender;
 
-public record LoginResponse(
+public record UserResponse(
         String token,
-        UserDto user
+        UserProfileDto user
 ) {
-    public record UserDto(
+    public record UserProfileDto(
             Long id,
             String username,
             AgeRange ageRange,

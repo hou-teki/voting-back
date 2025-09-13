@@ -1,7 +1,7 @@
 package com.example.voting_back.service;
 
-import com.example.voting_back.dto.request.LoginRequest;
-import com.example.voting_back.dto.response.LoginResponse;
+import com.example.voting_back.dto.request.UserRequest;
+import com.example.voting_back.dto.response.UserResponse;
 import com.example.voting_back.dto.response.VoteResponse;
 import com.example.voting_back.entity.User;
 import com.example.voting_back.entity.UserProfile;
@@ -18,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.beans.Transient;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -33,14 +32,14 @@ public class UserService {
     private final VoteRepository voteRepository;
     private final RecordRepository recordRepository;
 
-    public LoginResponse.UserDto getProfile(Long userId) {
+    public UserResponse.UserProfileDto getProfile(Long userId) {
         User user = userRepository.getReferenceById(userId);
         UserProfile profile = userProfileRepository.getReferenceById(userId);
         return toDto(user, profile);
     }
 
     @Transactional
-    public LoginResponse.UserDto updateProfile(Long userId, LoginRequest.UserProfileRequest updates) {
+    public UserResponse.UserProfileDto updateProfile(Long userId, UserRequest.UserProfileRequest updates) {
         User user = userRepository.getReferenceById(userId);
         UserProfile profile = userProfileRepository.getReferenceById(userId);
 
@@ -53,8 +52,8 @@ public class UserService {
         return toDto(user, profile);
     }
 
-    private LoginResponse.UserDto toDto(User user, UserProfile profile) {
-        return new LoginResponse.UserDto(
+    private UserResponse.UserProfileDto toDto(User user, UserProfile profile) {
+        return new UserResponse.UserProfileDto(
                 user.getId(),
                 user.getUsername(),
                 profile.getAgeRange(),

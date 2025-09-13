@@ -5,7 +5,7 @@ import com.example.voting_back.entity.enums.Gender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record LoginRequest(
+public record UserRequest(
 
         @NotBlank(message = "Username must not be blank")
         @Size(min = 4, max = 50, message = "Username length must be between {min} and {max}")

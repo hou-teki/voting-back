@@ -1,6 +1,6 @@
 package com.example.voting_back.security;
 
-import com.example.voting_back.dto.response.LoginResponse;
+import com.example.voting_back.dto.response.UserResponse;
 import com.example.voting_back.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -35,7 +35,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String username = jwtUtil.getUsername(token);
 
                 var authentication = new UsernamePasswordAuthenticationToken(
-                        new LoginResponse.UserDto(userId, username, null, null, null),
+                        new UserResponse.UserProfileDto(userId, username, null, null, null),
                         null,
                         Collections.emptyList()
                 );
