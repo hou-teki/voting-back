@@ -65,8 +65,6 @@ public class AuthServiceTest {
         User u = new User();
         u.setId(2L);
         u.setUsername("alice");
-        // Use a bcrypt hash for "correct"
-        User temp = new User();
         // Create a temporary service instance to obtain encoder behavior
         // But AuthService uses internal encoder, so we just precompute a hash externally
         String hash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("correct");
