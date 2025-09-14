@@ -1,5 +1,7 @@
 package com.example.voting_back.security;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.voting_back.common.ApiResponse;
 import com.example.voting_back.dto.response.UserResponse;
 import com.example.voting_back.util.JwtUtil;
@@ -33,9 +35,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            if (jwtUtil.validateToken(token)) {
-                Long userId = jwtUtil.getUserId(token);
-                String username = jwtUtil.getUsername(token);
+            try {
+                DecodedJWT jwt = jwtUtil.verify(token);
+                Long userId = jwtUtil.getUserId(jwt);
+                String username = jwtUtil.getUsername(jwt);
 
                 var authentication = new UsernamePasswordAuthenticationToken(
                         new UserResponse.UserProfileDto(userId, username, null, null, null),
@@ -43,7 +46,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         Collections.emptyList()
                 );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } else {
+            } catch (JWTVerificationException e) {
                 // Invalid or expired token -> respond 401 with message and stop filter chain
                 SecurityContextHolder.clearContext();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

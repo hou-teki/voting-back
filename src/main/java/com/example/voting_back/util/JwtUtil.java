@@ -2,7 +2,6 @@ package com.example.voting_back.util;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,22 +32,15 @@ public class JwtUtil {
                 .sign(algorithm);
     }
 
-    public boolean validateToken(String token) {
-        try {
-            verifier.verify(token);
-            return true;
-        } catch (JWTVerificationException e) {
-            return false;
-        }
+    public DecodedJWT verify(String token) {
+        return verifier.verify(token);
     }
 
-    public Long getUserId(String token) {
-        DecodedJWT jwt = verifier.verify(token);
+    public Long getUserId(DecodedJWT jwt) {
         return jwt.getClaim("userId").asLong();
     }
 
-    public String getUsername(String token) {
-        DecodedJWT jwt = verifier.verify(token);
+    public String getUsername(DecodedJWT jwt) {
         return jwt.getSubject();
     }
 }
