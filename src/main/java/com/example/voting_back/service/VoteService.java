@@ -216,7 +216,7 @@ public class VoteService {
 
     private LocalDate toLocalDate(String dateStr) {
         try {
-            return LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE_TIME);
+            return LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE);
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Invalid date: " + dateStr);
         }
