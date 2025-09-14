@@ -21,8 +21,10 @@ public class UserProfile {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "age_range")
+    @Builder.Default
     private AgeRange ageRange = AgeRange.UNKNOWN;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private Gender gender = Gender.UNKNOWN;
 
