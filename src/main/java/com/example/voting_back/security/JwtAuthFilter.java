@@ -1,7 +1,9 @@
 package com.example.voting_back.security;
 
+import com.example.voting_back.common.ApiResponse;
 import com.example.voting_back.dto.response.UserResponse;
 import com.example.voting_back.util.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +22,7 @@ import java.util.Collections;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(
@@ -40,6 +43,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         Collections.emptyList()
                 );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                // Invalid or expired token -> respond 401 with message and stop filter chain
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                objectMapper.writeValue(response.getWriter(), ApiResponse.error(401, "token expired"));
+                return;
             }
         }
         filterChain.doFilter(request, response);
